@@ -281,6 +281,15 @@ GET /tasks
 -Trajectory-based evaluation
 -Robust fallback system
 
+## Novelty and Creativity
+- Multi-tool dependency
+  - Policy + fact-check + history
+- Satire + strike interaction
+  - if strikes >= 3 → escalate
+  - else → dismiss
+- Order-aware grading
+  - Tools must come before decision
+
 ## Future Improvements
 -Real policy database integration
 -Better fact-checking models
