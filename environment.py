@@ -106,46 +106,40 @@ class ModeratorEnv:
     # FINAL REWARD (FIXED)
     # -----------------------
 
-   
-
     def _final_reward(self, correct):
         if self._state is None:
             return 0.0
 
         task = get_task(self._state.task_id)
-
         state = self._state
-        required_tools = getattr(task, "required_tools", [])
 
         reward = 0.0
 
-        # 🔻 Step penalty (discourage long reasoning)
-        reward -= 0.01 * getattr(state, "steps", 0)
+    # Step penalty
+        reward -= 0.01 * state.step_count
 
-        # ✅ Tool usage rewards
-        tools_used = getattr(state, "tools_used", {})
-
-        if tools_used.get("search_handbook"):
+    # Tool rewards
+        if state.policy_requested:
+            reward += 0.2
+        if state.fact_checked:
+            reward += 0.2
+        if state.history_requested:
             reward += 0.2
 
-        if tools_used.get("request_fact_check"):
-            reward += 0.2
-
-        if tools_used.get("request_user_history"):
-            reward += 0.2
-
-        # ⚠️ Required tool not used → penalty
-        if "request_user_history" in required_tools:
-            if not getattr(state, "retrieved_user_history", None):
+    # Required tool penalty
+        for tool in getattr(task, "required_tools", []):
+            if tool == "search_handbook" and not state.policy_requested:
+                reward -= 0.2
+            if tool == "request_fact_check" and not state.fact_checked:
+                reward -= 0.2
+            if tool == "request_user_history" and not state.history_requested:
                 reward -= 0.2
 
-        # ✅ Final correctness
-        if correct:
-            reward += 1.0
-        else:
-            reward -= 0.5
+    # Final correctness
+        reward += 1.0 if correct else -0.5
 
         return round(reward, 3)
+    
 
     # -----------------------
     # DECISION ACTIONS

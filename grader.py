@@ -1,7 +1,6 @@
 from typing import List
 from models import TrajectoryStep
 from tasks import get_task
-import random
 
 
 def evaluate_trajectory(task_id: str, trajectory: List[TrajectoryStep]) -> float:

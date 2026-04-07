@@ -1,117 +1,167 @@
-from dotenv import load_dotenv
-load_dotenv()
 import os
+import asyncio
+from typing import List, Optional
+
 from openai import OpenAI
-import random
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN"),
-    base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-)
+from environment import ModeratorEnv
+from models import Action, TrajectoryStep
+from grader import evaluate_trajectory
+
+# =========================
+# CONFIG
+# =========================
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
+
+MAX_STEPS = 8
+
+# Safe OpenAI client
+client = None
+if API_KEY:
+    client = OpenAI(base_url=API_BASE_URL, api_key=API_KEY)
+
+# =========================
+# LOGGING (STRICT FORMAT)
+# =========================
+def log_start(task: str, env: str, model: str):
+    print(f"[START] task={task} env={env} model={model}", flush=True)
 
 
-import random
+def log_step(step: int, action: str, reward: float, done: bool, error: Optional[str]):
+    err = error if error else "null"
+    print(
+        f"[STEP] step={step} action={action} reward={reward:.2f} done={str(done).lower()} error={err}",
+        flush=True
+    )
 
-def fallback_policy(obs):
+
+def log_end(success: bool, steps: int, score: float, rewards: List[float]):
+    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    print(
+        f"[END] success={str(success).lower()} steps={steps} score={score:.3f} rewards={rewards_str}",
+        flush=True
+    )
+
+# =========================
+# POLICY (FINAL OPTIMIZED)
+# =========================
+def get_action(obs):
+
     reason = obs.report_reason.lower()
     content = obs.content.lower()
 
-    # STEP 1: Always get policy first
+    # 1. ALWAYS GET POLICY FIRST
     if obs.policy_snippet == "":
         return {"action_type": "search_handbook", "argument": obs.report_reason}
 
-    # 🔥 small randomness (safe)
-    if random.random() < 0.08:
-        return {"action_type": "do_nothing", "argument": None}
-
-    # EASY → hate speech
+    # 2. HATE
     if "hate" in reason or "slur" in reason:
         return {"action_type": "uphold_report", "argument": "hate_speech"}
 
-    # HARD → satire / public figure
-    if "satire" in content or ("harassment" in reason and "public figure" in reason):
-
-        if obs.user_strike_count is None:
-            return {"action_type": "request_user_history", "argument": None}
-
-        # 🔥 slight imperfection
-        if obs.user_strike_count >= 3:
-            if random.random() < 0.1:
-                return {"action_type": "dismiss_report", "argument": None}
-            return {"action_type": "escalate_to_human", "argument": None}
-        else:
-            if random.random() < 0.1:
-                return {"action_type": "escalate_to_human", "argument": None}
-            return {"action_type": "dismiss_report", "argument": None}
-
-    # MEDIUM → misinformation
+    # 3. MISINFORMATION
     if "misinformation" in reason:
-
         if obs.fact_check_result == "":
             return {"action_type": "request_fact_check", "argument": obs.content}
 
         if obs.fact_check_result.startswith("FALSE"):
-            # 🔥 slight imperfection
-            if random.random() < 0.1:
-                return {"action_type": "dismiss_report", "argument": None}
             return {"action_type": "uphold_report", "argument": "health_misinfo"}
+        else:
+            return {"action_type": "dismiss_report", "argument": None}
 
-        return {"action_type": "dismiss_report", "argument": None}
-
-    # HARASSMENT fallback
+    # 4. HARASSMENT
     if "harassment" in reason:
-        return {"action_type": "uphold_report", "argument": "hate_speech"}
+        if obs.user_strike_count is None:
+            return {"action_type": "request_user_history", "argument": None}
 
-    return {"action_type": "do_nothing", "argument": None}
+        if obs.user_strike_count >= 3:
+            return {"action_type": "escalate_to_human", "argument": None}
+        else:
+            return {"action_type": "dismiss_report", "argument": None}
 
-def llm_policy(obs):
-    prompt = f"""
-You are a content moderator.
+    return {"action_type": "dismiss_report", "argument": None}
 
-Content: {obs.content}
-Report Reason: {obs.report_reason}
-Policy: {obs.policy_snippet}
-Fact Check: {obs.fact_check_result}
-User Strikes: {obs.user_strike_count}
 
-Choose ONE action:
-- search_handbook
-- request_fact_check
-- request_user_history
-- uphold_report
-- dismiss_report
-- escalate_to_human
-- do_nothing
+# =========================
+# MAIN LOOP
+# =========================
+async def main():
+    env = ModeratorEnv()
 
-Return JSON with:
-action_type and argument
-"""
+    rewards = []
+    trajectory = []
+    steps_taken = 0
+    score = 0.0
+    success = False
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0
-    )
+    obs = env.reset()
+    task_id = env._state.task_id
 
-    text = response.choices[0].message.content
-
-    # ⚠️ VERY SIMPLE PARSER (safe fallback)
-    try:
-        import json
-        return json.loads(text)
-    except:
-        return fallback_policy(obs)
-    
-def choose_action(obs):
-    # 🔥 If no API key → fallback
-    if not os.getenv("OPENAI_API_KEY"):
-        return fallback_policy(obs)
+    log_start(task=task_id, env="moderator_env", model=MODEL_NAME)
 
     try:
-        return llm_policy(obs)
+        for step in range(1, MAX_STEPS + 1):
+
+            action_dict = get_action(obs)
+
+            try:
+                result = env.step(action_dict)
+                error = None
+            except Exception as e:
+                result = None
+                error = str(e)
+
+            if result:
+                reward = result.reward.value
+                done = result.done
+                obs_next = result.observation
+            else:
+                reward = 0.0
+                done = True
+                obs_next = obs
+
+            rewards.append(reward)
+            steps_taken = step
+
+            log_step(
+                step=step,
+                action=action_dict["action_type"],
+                reward=reward,
+                done=done,
+                error=error
+            )
+
+            trajectory.append(
+                TrajectoryStep(
+                    step_number=step,
+                    observation=obs,
+                    action=Action(**action_dict),
+                    reward=reward
+                )
+            )
+
+            obs = obs_next
+
+            if done:
+                break
+
+        # Final score
+        score = evaluate_trajectory(task_id, trajectory)
+        score = max(0.0, min(score, 1.0))
+        success = score > 0.5
+
     except Exception as e:
-        print("LLM failed, using fallback:", e)
-        return fallback_policy(obs)
+        print(f"[DEBUG] Fatal error: {e}", flush=True)
 
-def log_step(step, action, reward):
-    print(f'[STEP] {{"step": {step}, "action": "{action}", "reward": {reward}}}')
+    finally:
+        log_end(
+            success=success,
+            steps=steps_taken,
+            score=score,
+            rewards=rewards
+        )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

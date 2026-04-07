@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from environment import ModeratorEnv
-from inference import choose_action
+from inference import get_action as choose_action
 from models import TrajectoryStep, Action
 from grader import evaluate_trajectory
 
@@ -40,48 +40,74 @@ def run(req: RunRequest):
     obs = env.reset(req.task_id)
 
     done = False
-    total_reward = 0.0
-    trajectory = []
     step_number = 0
+    rewards = []
+    trajectory = []
 
-    print("[START]")
+    print(f"[START] task={env._state.task_id} env=moderator_env model=rule_based")
 
-    while not done:
-        step_number += 1
+    try:
+        while not done and step_number < 8:
+            step_number += 1
 
-        # Get action from model
-        action_dict = choose_action(obs)
+            # Get action
+            action_dict = choose_action(obs)
 
-        # Step environment
-        result = env.step(action_dict)
+            try:
+                result = env.step(action_dict)
+                error = None
+            except Exception as e:
+                result = None
+                error = str(e)
 
-        # Log step (structured)
-        print(f'[STEP] {{"step": {step_number}, "action": "{action_dict["action_type"]}", "reward": {result.reward.value}}}')
+            if result:
+                reward = result.reward.value
+                done = result.done
+                next_obs = result.observation
+            else:
+                reward = 0.0
+                done = True
+                next_obs = obs
 
-        # Store trajectory (CORRECT ORDER)
-        trajectory.append(
-            TrajectoryStep(
-                step_number=step_number,
-                observation=obs,
-                action=Action(**action_dict),
-                reward=result.reward.value
+            rewards.append(reward)
+
+            # ✅ STRICT STEP LOG
+            print(
+                f"[STEP] step={step_number} action={action_dict['action_type']} "
+                f"reward={reward:.2f} done={str(done).lower()} error={error if error else 'null'}"
             )
+
+            # Store trajectory
+            trajectory.append(
+                TrajectoryStep(
+                    step_number=step_number,
+                    observation=obs,
+                    action=Action(**action_dict),
+                    reward=reward
+                )
+            )
+
+            obs = next_obs
+
+        # Evaluation
+        score = evaluate_trajectory(env._state.task_id, trajectory)
+        score = max(0.0, min(score, 1.0))
+        success = score > 0.5
+
+    except Exception as e:
+        print(f"[DEBUG] Fatal error: {e}")
+        score = 0.0
+        success = False
+
+    finally:
+        # ✅ STRICT END LOG
+        print(
+            f"[END] success={str(success).lower()} steps={step_number} "
+            f"score={score:.3f} rewards={','.join(f'{r:.2f}' for r in rewards)}"
         )
 
-        # Update state
-        obs = result.observation
-        total_reward += result.reward.value
-        done = result.done
-
-    print("[END]")
-
-    # Safety check
-    if not trajectory:
-        print("Warning: Empty trajectory")
-
-    score = evaluate_trajectory(req.task_id, trajectory)
-
     return {
-        "total_reward": round(total_reward, 4),
-        "evaluation_score": score
+        "score": score,
+        "steps": step_number,
+        "rewards": rewards
     }
