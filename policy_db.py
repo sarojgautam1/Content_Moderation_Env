@@ -1,11 +1,9 @@
 from typing import Dict, Any, Optional
-import random
 
 def request_fact_check(query: str) -> str:
     base = "No fact-check available..."
 
-    if random.random() < 0.2:
-        return "UNVERIFIED: conflicting sources"
+    return "UNVERIFIED: conflicting sources"
 
     
 
