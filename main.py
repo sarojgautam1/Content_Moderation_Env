@@ -15,8 +15,9 @@ class RunRequest(BaseModel):
     task_id: Optional[str] = None
 
 @app.post("/reset")
-def reset(req: RunRequest):
-    obs = env.reset(req.task_id)
+def reset(req: RunRequest = None):
+    task_id = req.task_id if req else None
+    obs = env.reset(task_id)
     return obs.model_dump(mode='json')
 
 from typing import Dict
