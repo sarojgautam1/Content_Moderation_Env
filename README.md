@@ -4,7 +4,7 @@ sdk: docker
 emoji: 💻
 colorFrom: blue
 colorTo: purple
-short_description: An AI moderation system that simulates real-world content re
+short_description: AI moderation using reasoning, tools, and policy logic
 ---
 # Content Policy & Trust Moderator (OpenEnv)
 
