@@ -156,6 +156,12 @@ This project simulates a real-world moderation workflow, enabling evaluation of:
 
     Open:
     http://localhost:7860/docs
+    
+    4. Run on HuggingFace
+    https://sar1505-content-moderation-env.hf.space
+
+    For the UI app:
+    https://sar1505-content-moderation-env.hf.space/docs
 
 ## API Usage Examples
 
