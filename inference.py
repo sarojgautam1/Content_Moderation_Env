@@ -11,9 +11,9 @@ from grader import evaluate_trajectory
 # =========================
 # CONFIG
 # =========================
-API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
-API_KEY = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.environ.get("MODEL_NAME", "gpt-4o-mini")
+API_KEY = os.environ.get("API_KEY") or os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY")
 
 MAX_STEPS = 8
 
@@ -48,39 +48,75 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]):
 # POLICY (FINAL OPTIMIZED)
 # =========================
 def get_action(obs):
-
+    import json
     reason = obs.report_reason.lower()
     content = obs.content.lower()
 
-    # 1. ALWAYS GET POLICY FIRST
-    if obs.policy_snippet == "":
-        return {"action_type": "search_handbook", "argument": obs.report_reason}
+    def get_hardcoded_action():
+        if obs.policy_snippet == "":
+            return {"action_type": "search_handbook", "argument": obs.report_reason}
+        if "hate" in reason or "slur" in reason:
+            return {"action_type": "uphold_report", "argument": "hate_speech"}
+        if "misinformation" in reason:
+            if obs.fact_check_result == "":
+                return {"action_type": "request_fact_check", "argument": obs.content}
+            if obs.fact_check_result.startswith("FALSE"):
+                return {"action_type": "uphold_report", "argument": "health_misinfo"}
+            else:
+                return {"action_type": "dismiss_report", "argument": None}
+        if "harassment" in reason:
+            if obs.user_strike_count is None:
+                return {"action_type": "request_user_history", "argument": None}
+            if obs.user_strike_count >= 3:
+                return {"action_type": "escalate_to_human", "argument": None}
+            else:
+                return {"action_type": "dismiss_report", "argument": None}
+        return {"action_type": "dismiss_report", "argument": None}
 
-    # 2. HATE
-    if "hate" in reason or "slur" in reason:
-        return {"action_type": "uphold_report", "argument": "hate_speech"}
+    if not client:
+        return get_hardcoded_action()
 
-    # 3. MISINFORMATION
-    if "misinformation" in reason:
-        if obs.fact_check_result == "":
-            return {"action_type": "request_fact_check", "argument": obs.content}
+    prompt = f"""
+Choose an action based strictly on this logic:
+1. If Policy Snippet is empty, action is `search_handbook` with argument set to the Report Reason.
+2. If Report Reason contains 'hate' or 'slur': action `uphold_report` with argument `hate_speech`.
+3. If Report Reason contains 'misinformation':
+   - If Fact Check Result is empty, action `request_fact_check` with argument set to the Content.
+   - If Fact Check Result starts with FALSE, action `uphold_report` with `health_misinfo`.
+   - Else action `dismiss_report`.
+4. If Report Reason contains 'harassment':
+   - If User Strike Count is None/empty, action `request_user_history`.
+   - If User Strike Count >= 3, action `escalate_to_human`.
+   - Else action `dismiss_report`.
+Fallback: action `dismiss_report`.
 
-        if obs.fact_check_result.startswith("FALSE"):
-            return {"action_type": "uphold_report", "argument": "health_misinfo"}
-        else:
-            return {"action_type": "dismiss_report", "argument": None}
+Observation:
+Content: '{obs.content}'
+Report Reason: '{obs.report_reason}'
+User Strike Count: {obs.user_strike_count}
+Policy Snippet: '{obs.policy_snippet}'
+Fact Check Result: '{obs.fact_check_result}'
 
-    # 4. HARASSMENT
-    if "harassment" in reason:
-        if obs.user_strike_count is None:
-            return {"action_type": "request_user_history", "argument": None}
-
-        if obs.user_strike_count >= 3:
-            return {"action_type": "escalate_to_human", "argument": None}
-        else:
-            return {"action_type": "dismiss_report", "argument": None}
-
-    return {"action_type": "dismiss_report", "argument": None}
+Output strictly valid JSON: {{"action_type": "<action>", "argument": "<arg or null>"}}
+"""
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0
+        )
+        out = response.choices[0].message.content.strip()
+        if "```json" in out:
+            out = out.split("```json")[1].split("```")[0]
+        elif "```" in out:
+            # might have other language or just plain backticks
+            parts = out.split("```")
+            out = parts[1] if len(parts) >= 3 else parts[-1]
+        
+        return json.loads(out.strip())
+    except Exception as e:
+        print(f"[DEBUG] LLM call failed, falling back: {e}", flush=True)
+        return get_hardcoded_action()
 
 
 # =========================
