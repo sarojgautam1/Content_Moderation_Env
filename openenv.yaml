@@ -8,6 +8,8 @@ endpoints:
   reset: /reset
   step: /step
   state: /state
+  evaluate: /evaluate
+  tasks: /tasks
 
 models:
   observation: Observation
@@ -15,6 +17,6 @@ models:
   reward: Reward
 
 metadata:
-  author: your-name
+  author: team
   difficulty: easy-medium-hard
   task_type: moderation

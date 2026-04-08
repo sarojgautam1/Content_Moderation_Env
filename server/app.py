@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
 from environment import ModeratorEnv
 from inference import get_action as choose_action
@@ -28,15 +28,32 @@ def step(action: Dict):
     return result.model_dump(mode="json")
 
 
+@app.get("/")
+def read_root():
+    return {"status": "Moderator Env Running"}
+
 @app.get("/state")
 def state():
-    return env.state().model_dump(mode="json")
+    st = env.state()
+    if st is None:
+        return {"error": "Environment not reset"}
+    return st.model_dump(mode="json")
 
 
 @app.get("/tasks")
-def list_tasks():
-    from tasks import list_tasks
-    return list_tasks()
+def list_tasks_route():
+    from tasks import get_all_tasks
+    tasks = get_all_tasks()
+    return [{"task_id": t.id, "has_grader": True, **t.model_dump(mode="json")} for t in tasks]
+
+class EvaluateRequest(BaseModel):
+    task_id: str
+    trajectory: List[TrajectoryStep]
+
+@app.post("/evaluate")
+def evaluate(req: EvaluateRequest):
+    score = evaluate_trajectory(req.task_id, req.trajectory)
+    return {"score": score}
 
 
 @app.post("/run")
