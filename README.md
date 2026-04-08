@@ -145,7 +145,7 @@ This project simulates a real-world moderation workflow, enabling evaluation of:
     pip install -r requirements.txt
 
     2. Run locally
-    uvicorn main:app --reload
+    uvicorn server.app:app --reload
 
     Open:
     http://localhost:8000/docs
@@ -162,6 +162,22 @@ This project simulates a real-world moderation workflow, enabling evaluation of:
 
     For the UI app:
     https://sar1505-content-moderation-env.hf.space/docs
+
+## Run Example
+
+    POST /run
+
+    Request:
+    {
+      "task_id": "task_easy_001"
+    }
+
+    Response:
+    {
+      "score": 0.92,
+      "steps": 2,
+      "rewards": [0.25, 1.0]
+    }
 
 ## API Usage Examples
 
@@ -214,7 +230,62 @@ POST /step
 
 ---
 
-### 3. Run Full Episode
+### 3. Evaluate Trajectory
+
+**Request:**
+
+```json
+POST /evaluate
+{
+  "task_id": "task_easy_001",
+  "trajectory": [
+    {
+      "step_number": 1,
+      "observation": {
+        "content": "People from that specific religion are all dirty criminals and should be thrown out of our city. We don't want them here.",
+        "report_reason": "Hate Speech / Slurs",
+        "user_strike_count": null,
+        "policy_snippet": "",
+        "fact_check_result": "",
+        "step_number": 1
+      },
+      "action": {
+        "action_type": "search_handbook",
+        "argument": "hate speech"
+      },
+      "reward": 0.25
+    },
+    {
+      "step_number": 2,
+      "observation": {
+        "content": "People from that specific religion are all dirty criminals and should be thrown out of our city. We don't want them here.",
+        "report_reason": "Hate Speech / Slurs",
+        "user_strike_count": null,
+        "policy_snippet": "Policy 101 (Hate Speech): Any language that attacks...",
+        "fact_check_result": "",
+        "step_number": 2
+      },
+      "action": {
+        "action_type": "uphold_report",
+        "argument": "hate_speech"
+      },
+      "reward": 1.0
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "score": 1.0
+}
+```
+
+---
+
+### 4. Run Full Episode
 
 **Request:**
 
@@ -236,7 +307,7 @@ POST /run
 
 ---
 
-### 4. Get State
+### 5. Get State
 
 ```json
 GET /state
@@ -244,7 +315,7 @@ GET /state
 
 ---
 
-### 5. List Tasks
+### 6. List Tasks
 
 ```json
 GET /tasks
