@@ -111,6 +111,7 @@ class TaskModel(BaseModel):
     expected_violation_code: Optional[str] = None
 
     required_tools: List[str] = Field(default_factory=list)
+    grader: str = "default"
 
 
 # -----------------------------

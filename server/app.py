@@ -44,7 +44,14 @@ def state():
 def list_tasks_route():
     from tasks import get_all_tasks
     tasks = get_all_tasks()
-    return [{"task_id": t.id, "has_grader": True, **t.model_dump(mode="json")} for t in tasks]
+
+    return [
+        {
+            "id": t.id,
+            "grader": "evaluate_trajectory"
+        }
+        for t in tasks
+    ]
 
 class EvaluateRequest(BaseModel):
     task_id: str
