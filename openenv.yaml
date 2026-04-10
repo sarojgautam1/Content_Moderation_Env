@@ -11,13 +11,6 @@ endpoints:
   evaluate: /evaluate
   tasks: /tasks
 
-  graders:
-  - hate_speech_grader
-  - misinfo_grader
-  - satire_escalation_grader
-  - satire_dismiss_grader
-  - implicit_hate_grader
-
 models:
   observation: Observation
   action: Action
@@ -44,11 +37,4 @@ graders:
 metadata:
   author: team
   difficulty: easy-medium-hard
-<<<<<<< HEAD
   task_type: moderation
-graders:
-  name: evaluate_trajectory
-  entrypoint: grader:evaluate_trajectory
-=======
-  task_type: moderation
->>>>>>> d4aed91 (fixed grader registration)
