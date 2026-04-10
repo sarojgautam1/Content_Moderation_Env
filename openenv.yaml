@@ -18,32 +18,31 @@ models:
 
 tasks:
   - id: task_easy_001
+    difficulty: easy
     grader: evaluate_trajectory
+
   - id: task_medium_001
+    difficulty: medium
     grader: evaluate_trajectory
+
   - id: task_medium_002
+    difficulty: medium
     grader: evaluate_trajectory
+
   - id: task_hard_001
+    difficulty: hard
     grader: evaluate_trajectory
+
   - id: task_hard_002
+    difficulty: hard
     grader: evaluate_trajectory
+
   - id: task_hard_003
+    difficulty: hard
     grader: evaluate_trajectory
 
 graders:
-  - name: hate_speech_grader
-    entrypoint: grader:evaluate_trajectory
-
-  - name: misinfo_grader
-    entrypoint: grader:evaluate_trajectory
-
-  - name: satire_escalation_grader
-    entrypoint: grader:evaluate_trajectory
-
-  - name: satire_dismiss_grader
-    entrypoint: grader:evaluate_trajectory
-
-  - name: implicit_hate_grader
+  - name: evaluate_trajectory
     entrypoint: grader:evaluate_trajectory
 
 metadata:
