@@ -1,12 +1,18 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Optional, Dict, List
- 
+
 from environment import ModeratorEnv
 from inference import get_action as choose_action
 from models import TrajectoryStep, Action
 from grader import evaluate_trajectory
- 
+from tasks import get_all_tasks, get_task
+from environment import ModeratorEnv
+from inference import get_action as choose_action
+from models import TrajectoryStep, Action
+from grader import evaluate_trajectory, get_grader, GRADER_REGISTRY
+
+
 app = FastAPI()
 env = ModeratorEnv()
  
@@ -48,7 +54,9 @@ def list_tasks_route():
     return [
         {
             "id": t.id,
-            "grader": t.grader
+            "grader": t.grader,          # ✅ reads from TaskModel
+            "difficulty": t.difficulty,
+            "has_grader": t.grader != "" and t.grader is not None  # ✅ explicit flag
         }
         for t in tasks
     ]
@@ -61,10 +69,17 @@ class EvaluateRequest(BaseModel):
  
 @app.post("/evaluate")
 def evaluate(req: EvaluateRequest):
-    score = evaluate_trajectory(req.task_id, req.trajectory)
-    return {"score": score}
- 
- 
+
+    task = get_task(req.task_id)
+    grader_fn = get_grader(task.grader)   # ✅ resolves by name
+    score = grader_fn(req.task_id, req.trajectory)
+    return {
+        "task_id": req.task_id,
+        "grader": task.grader,
+        "score": score
+    }
+
+
 @app.post("/run")
 def run(req: RunRequest):
     obs = env.reset(req.task_id)

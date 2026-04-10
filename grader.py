@@ -99,3 +99,15 @@ def evaluate_trajectory(task_id: str, trajectory: List[TrajectoryStep]) -> float
     # ✅ Clamp AFTER scaling 
     score = max(0.0, min(score, 1.0))
     return round(score, 3)
+
+# --- GRADER REGISTRY ---
+GRADER_REGISTRY = {
+    "hate_speech_grader":        evaluate_trajectory,
+    "misinfo_grader":            evaluate_trajectory,
+    "satire_escalation_grader":  evaluate_trajectory,
+    "satire_dismiss_grader":     evaluate_trajectory,
+    "implicit_hate_grader":      evaluate_trajectory,
+}
+
+def get_grader(grader_name: str):
+    return GRADER_REGISTRY.get(grader_name, evaluate_trajectory)

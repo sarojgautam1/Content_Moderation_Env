@@ -12,7 +12,9 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="evaluate_trajectory"
+
+        grader="hate_speech_grader"
+
     ),
 
     TaskModel(
@@ -24,7 +26,8 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="health_misinfo",
         required_tools=["search_handbook", "request_fact_check"],
-        grader="evaluate_trajectory"
+
+        grader="misinfo_grader"
     ),
 
     TaskModel(
@@ -36,7 +39,7 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_fact_check"],
-        grader="evaluate_trajectory"
+        grader="misinfo_grader"
     ),
 
     TaskModel(
@@ -48,7 +51,7 @@ TASKS = [
         expected_final_action="escalate_to_human",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="evaluate_trajectory"
+        grader="satire_escalation_grader"
     ),
 
     TaskModel(
@@ -60,7 +63,8 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="evaluate_trajectory"
+
+        grader="satire_dismiss_grader"
     ),
 
     TaskModel(
@@ -72,7 +76,7 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="evaluate_trajectory"
+        grader="implicit_hate_grader"
     )
 ]
 
@@ -92,7 +96,8 @@ def list_tasks():
     return [
         {
             "id": t.id,
-            "grader": t.grader
+            "grader": t.grader,
+            "difficulty": t.difficulty
         }
         for t in TASKS
     ]

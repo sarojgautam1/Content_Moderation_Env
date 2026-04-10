@@ -11,6 +11,13 @@ endpoints:
   evaluate: /evaluate
   tasks: /tasks
 
+  graders:
+  - hate_speech_grader
+  - misinfo_grader
+  - satire_escalation_grader
+  - satire_dismiss_grader
+  - implicit_hate_grader
+
 models:
   observation: Observation
   action: Action
