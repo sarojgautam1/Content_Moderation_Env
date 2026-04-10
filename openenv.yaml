@@ -31,7 +31,19 @@ tasks:
     grader: evaluate_trajectory
 
 graders:
-  - name: evaluate_trajectory
+  - name: hate_speech_grader
+    entrypoint: grader:evaluate_trajectory
+
+  - name: misinfo_grader
+    entrypoint: grader:evaluate_trajectory
+
+  - name: satire_escalation_grader
+    entrypoint: grader:evaluate_trajectory
+
+  - name: satire_dismiss_grader
+    entrypoint: grader:evaluate_trajectory
+
+  - name: implicit_hate_grader
     entrypoint: grader:evaluate_trajectory
 
 metadata:
