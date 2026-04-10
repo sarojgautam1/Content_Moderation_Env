@@ -106,7 +106,7 @@ def schema():
     }
 
 
-@app.post("/mcp")
+@app.api_route("/mcp", methods=["GET", "POST"])
 async def mcp(request: dict = None):
     return {
         "jsonrpc": "2.0",
