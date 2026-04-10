@@ -102,6 +102,8 @@ def evaluate_trajectory(task_id: str, trajectory: List[TrajectoryStep]) -> float
 
 # --- GRADER REGISTRY ---
 GRADER_REGISTRY = {
+    "evaluate_trajectory": evaluate_trajectory, 
+
     "hate_speech_grader":        evaluate_trajectory,
     "misinfo_grader":            evaluate_trajectory,
     "satire_escalation_grader":  evaluate_trajectory,
