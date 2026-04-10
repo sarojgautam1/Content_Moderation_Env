@@ -16,10 +16,32 @@ models:
   action: Action
   reward: Reward
 
+tasks:
+  - id: task_easy_001
+    grader: evaluate_trajectory
+  - id: task_medium_001
+    grader: evaluate_trajectory
+  - id: task_medium_002
+    grader: evaluate_trajectory
+  - id: task_hard_001
+    grader: evaluate_trajectory
+  - id: task_hard_002
+    grader: evaluate_trajectory
+  - id: task_hard_003
+    grader: evaluate_trajectory
+
+graders:
+  - name: evaluate_trajectory
+    entrypoint: grader:evaluate_trajectory
+
 metadata:
   author: team
   difficulty: easy-medium-hard
+<<<<<<< HEAD
   task_type: moderation
 graders:
   name: evaluate_trajectory
   entrypoint: grader:evaluate_trajectory
+=======
+  task_type: moderation
+>>>>>>> d4aed91 (fixed grader registration)
