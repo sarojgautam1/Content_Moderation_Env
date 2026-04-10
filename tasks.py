@@ -83,4 +83,4 @@ def get_all_tasks() -> List[TaskModel]:
 
 
 def list_tasks():
-    return [{"id": t.id, "grader": t.grader} for t in TASKS]
+    return [{"task_id": t.id} for t in TASKS]
