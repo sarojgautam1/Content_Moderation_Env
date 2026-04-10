@@ -2,7 +2,6 @@ from models import TaskModel
 from typing import List
 
 TASKS = [
-
     TaskModel(
         id="task_easy_001",
         difficulty="Easy",
@@ -12,11 +11,8 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-
-        grader="hate_speech_grader"
-
+        grader="evaluate_trajectory"
     ),
-
     TaskModel(
         id="task_medium_001",
         difficulty="Medium",
@@ -26,10 +22,8 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="health_misinfo",
         required_tools=["search_handbook", "request_fact_check"],
-
-        grader="misinfo_grader"
+        grader="evaluate_trajectory"
     ),
-
     TaskModel(
         id="task_medium_002",
         difficulty="Medium",
@@ -39,9 +33,8 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_fact_check"],
-        grader="misinfo_grader"
+        grader="evaluate_trajectory"
     ),
-
     TaskModel(
         id="task_hard_001",
         difficulty="Hard",
@@ -51,9 +44,8 @@ TASKS = [
         expected_final_action="escalate_to_human",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="satire_escalation_grader"
+        grader="evaluate_trajectory"
     ),
-
     TaskModel(
         id="task_hard_002",
         difficulty="Hard",
@@ -63,20 +55,18 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-
-        grader="satire_dismiss_grader"
+        grader="evaluate_trajectory"
     ),
-
     TaskModel(
         id="task_hard_003",
         difficulty="Hard",
         user_id="user_clean_001",
-        content="Oh sure, they're SUCH wonderful people 🙄 always causing trouble wherever they go.",
+        content="Oh sure, they're SUCH wonderful people always causing trouble wherever they go.",
         report_reason="Harassment",
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="implicit_hate_grader"
+        grader="evaluate_trajectory"
     )
 ]
 
@@ -93,11 +83,4 @@ def get_all_tasks() -> List[TaskModel]:
 
 
 def list_tasks():
-    return [
-        {
-            "id": t.id,
-            "grader": t.grader,
-            "difficulty": t.difficulty
-        }
-        for t in TASKS
-    ]
+    return [{"id": t.id, "grader": t.grader} for t in TASKS]
