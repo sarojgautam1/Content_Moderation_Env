@@ -12,7 +12,7 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="default"
+        grader="evaluate_trajectory"
     ),
 
     TaskModel(
@@ -24,7 +24,7 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="health_misinfo",
         required_tools=["search_handbook", "request_fact_check"],
-        grader="default"
+        grader="evaluate_trajectory"
     ),
 
     TaskModel(
@@ -36,7 +36,7 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_fact_check"],
-        grader="default"
+        grader="evaluate_trajectory"
     ),
 
     TaskModel(
@@ -48,7 +48,7 @@ TASKS = [
         expected_final_action="escalate_to_human",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="default"
+        grader="evaluate_trajectory"
     ),
 
     TaskModel(
@@ -60,19 +60,19 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="default"
+        grader="evaluate_trajectory"
     ),
 
     TaskModel(
         id="task_hard_003",
         difficulty="Hard",
         user_id="user_clean_001",
-        content="Oh sure, they’re SUCH wonderful people 🙄 always causing trouble wherever they go.",
+        content="Oh sure, they're SUCH wonderful people 🙄 always causing trouble wherever they go.",
         report_reason="Harassment",
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="default"
+        grader="evaluate_trajectory"
     )
 ]
 
@@ -89,7 +89,6 @@ def get_all_tasks() -> List[TaskModel]:
 
 
 def list_tasks():
-    # return grader info
     return [
         {
             "id": t.id,

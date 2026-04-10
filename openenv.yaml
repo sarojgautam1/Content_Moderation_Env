@@ -20,3 +20,6 @@ metadata:
   author: team
   difficulty: easy-medium-hard
   task_type: moderation
+graders:
+  - name: evaluate_trajectory
+    entrypoint: grader:evaluate_trajectory
