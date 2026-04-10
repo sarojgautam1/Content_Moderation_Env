@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-server = "main:main"
+server = "server.app:main"
 
 [build-system]
 requires = ["hatchling"]
