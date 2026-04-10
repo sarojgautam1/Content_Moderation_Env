@@ -8,13 +8,33 @@ endpoints:
   reset: /reset
   step: /step
   state: /state
+  evaluate: /evaluate
+  tasks: /tasks
 
 models:
   observation: Observation
   action: Action
   reward: Reward
 
+tasks:
+  - id: task_easy_001
+    grader: evaluate_trajectory
+  - id: task_medium_001
+    grader: evaluate_trajectory
+  - id: task_medium_002
+    grader: evaluate_trajectory
+  - id: task_hard_001
+    grader: evaluate_trajectory
+  - id: task_hard_002
+    grader: evaluate_trajectory
+  - id: task_hard_003
+    grader: evaluate_trajectory
+
+graders:
+  - name: evaluate_trajectory
+    entrypoint: grader:evaluate_trajectory
+
 metadata:
-  author: your-name
+  author: team
   difficulty: easy-medium-hard
   task_type: moderation
