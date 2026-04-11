@@ -11,7 +11,7 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="evaluate_trajectory"
+        grader="hate_speech_grader"
     ),
     TaskModel(
         id="task_medium_001",
@@ -22,7 +22,7 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="health_misinfo",
         required_tools=["search_handbook", "request_fact_check"],
-        grader="evaluate_trajectory"
+        grader="misinfo_grader"
     ),
     TaskModel(
         id="task_medium_002",
@@ -33,7 +33,7 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_fact_check"],
-        grader="evaluate_trajectory"
+        grader="misinfo_grader"
     ),
     TaskModel(
         id="task_hard_001",
@@ -44,7 +44,7 @@ TASKS = [
         expected_final_action="escalate_to_human",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="evaluate_trajectory"
+        grader="satire_escalation_grader"
     ),
     TaskModel(
         id="task_hard_002",
@@ -55,7 +55,7 @@ TASKS = [
         expected_final_action="dismiss_report",
         expected_violation_code=None,
         required_tools=["search_handbook", "request_user_history"],
-        grader="evaluate_trajectory"
+        grader="satire_dismiss_grader"
     ),
     TaskModel(
         id="task_hard_003",
@@ -66,7 +66,7 @@ TASKS = [
         expected_final_action="uphold_report",
         expected_violation_code="hate_speech",
         required_tools=["search_handbook"],
-        grader="evaluate_trajectory"
+        grader="implicit_hate_grader"
     )
 ]
 
@@ -83,4 +83,4 @@ def get_all_tasks() -> List[TaskModel]:
 
 
 def list_tasks():
-    return [{"task_id": t.id} for t in TASKS]
+    return [{"id": t.id, "grader": t.grader} for t in TASKS]
